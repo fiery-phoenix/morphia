@@ -52,6 +52,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.mongodb.morphia.AnnotationBuilder.toMap;
+import static org.mongodb.morphia.MorphiaUtils.join;
 import static org.mongodb.morphia.utils.IndexType.fromValue;
 
 final class IndexHelper {
@@ -218,7 +219,7 @@ final class IndexHelper {
     }
 
     private MappingException pathFail(final MappedClass mc, final List<String> path) {
-        return new MappingException(format("Could not resolve path '%s' against '%s'.", MorphiaUtils.join(path, '.'),
+        return new MappingException(format("Could not resolve path '%s' against '%s'.", join(path, '.'),
                                            mc.getClazz().getName()));
     }
 
@@ -327,7 +328,7 @@ final class IndexHelper {
             if (!options.disableValidation()) {
                 throw pathFail(mc, path);
             } else {
-                return MorphiaUtils.join(path, '.');
+                return join(path, '.');
             }
         }
         if (path.size() > 1) {
@@ -338,7 +339,7 @@ final class IndexHelper {
                 if (!options.disableValidation()) {
                     throw pathFail(mc, path);
                 } else {
-                    return MorphiaUtils.join(path, '.');
+                    return join(path, '.');
                 }
             }
         }
