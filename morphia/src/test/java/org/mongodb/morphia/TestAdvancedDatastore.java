@@ -23,8 +23,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mongodb.morphia.testutil.TestEntity;
 
-import java.util.ArrayList;
-
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
