@@ -66,17 +66,6 @@ final class IndexHelper {
         this.database = database;
     }
 
-    private static String join(final List<String> path, final char delimiter) {
-        StringBuilder builder = new StringBuilder();
-        for (String element : path) {
-            if (builder.length() != 0) {
-                builder.append(delimiter);
-            }
-            builder.append(element);
-        }
-        return builder.toString();
-    }
-
     private void calculateWeights(final Index index, final com.mongodb.client.model.IndexOptions indexOptions) {
         Document weights = new Document();
         for (Field field : index.fields()) {
@@ -229,7 +218,7 @@ final class IndexHelper {
     }
 
     private MappingException pathFail(final MappedClass mc, final List<String> path) {
-        return new MappingException(format("Could not resolve path '%s' against '%s'.", join(path, '.'), mc.getClazz().getName()));
+        return new MappingException(format("Could not resolve path '%s' against '%s'.", MorphiaUtils.join(path, '.'), mc.getClazz().getName()));
     }
 
     private Index replaceFields(final Index original, final List<Field> list) {
@@ -337,7 +326,7 @@ final class IndexHelper {
             if (!options.disableValidation()) {
                 throw pathFail(mc, path);
             } else {
-                return join(path, '.');
+                return MorphiaUtils.join(path, '.');
             }
         }
         if (path.size() > 1) {
@@ -348,7 +337,7 @@ final class IndexHelper {
                 if (!options.disableValidation()) {
                     throw pathFail(mc, path);
                 } else {
-                    return join(path, '.');
+                    return MorphiaUtils.join(path, '.');
                 }
             }
         }

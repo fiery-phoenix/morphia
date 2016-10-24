@@ -59,6 +59,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.lang.String.format;
+import static org.mongodb.morphia.mapping.EmbeddedMapper.shouldSaveClassName;
 import static org.mongodb.morphia.utils.ReflectionUtils.getParameterizedClass;
 import static org.mongodb.morphia.utils.ReflectionUtils.implementsInterface;
 import static org.mongodb.morphia.utils.ReflectionUtils.isPropertyType;

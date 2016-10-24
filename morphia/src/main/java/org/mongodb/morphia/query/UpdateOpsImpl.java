@@ -3,8 +3,11 @@ package org.mongodb.morphia.query;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import org.mongodb.morphia.PathTarget;
+import org.mongodb.morphia.mapping.MappedClass;
 import org.mongodb.morphia.mapping.MappedField;
 import org.mongodb.morphia.mapping.Mapper;
+import org.mongodb.morphia.mapping.MappingException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,7 +15,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.mongodb.morphia.MorphiaUtils.join;
 import static org.mongodb.morphia.query.QueryValidator.validateQuery;
 
 
@@ -113,12 +119,15 @@ public class UpdateOpsImpl<T> implements UpdateOperations<T> {
             throw new QueryException("Values cannot be null or empty.");
         }
 
-        StringBuilder fieldName = new StringBuilder(field);
-        MappedField mf = validate(values, fieldName);
+        PathTarget pathTarget = new PathTarget(mapper, mapper.getMappedClass(clazz), field);
+        if (!validateNames) {
+            pathTarget.disableValidation();
+        }
+        MappedField mf = pathTarget.getTarget();
 
         BasicDBObject dbObject = new BasicDBObject(UpdateOperator.EACH.val(), mapper.toMongoObject(mf, null, values));
         options.update(dbObject);
-        addOperation(UpdateOperator.PUSH, fieldName, dbObject);
+        addOperation(UpdateOperator.PUSH, pathTarget.translatedPath(), dbObject);
 
         return this;
     }
@@ -260,8 +269,12 @@ public class UpdateOpsImpl<T> implements UpdateOperations<T> {
         }
 
         Object val = value;
-        StringBuilder fieldName = new StringBuilder(f);
-        MappedField mf = validate(val, fieldName);
+        PathTarget pathTarget = new PathTarget(mapper, mapper.getMappedClass(clazz), f);
+        if (!validateNames) {
+            pathTarget.disableValidation();
+        }
+        pathTarget.resolve();
+        MappedField mf = pathTarget.getTarget();
 
         if (convert) {
             if (UpdateOperator.PULL_ALL.equals(op) && value instanceof List) {
@@ -276,22 +289,63 @@ public class UpdateOpsImpl<T> implements UpdateOperations<T> {
             val = new BasicDBObject(UpdateOperator.EACH.val(), val);
         }
 
-        addOperation(op, fieldName, val);
+        addOperation(op, pathTarget.translatedPath(), val);
     }
 
-    private void addOperation(final UpdateOperator op, final StringBuilder fieldName, final Object val) {
+    private void addOperation(final UpdateOperator op, final String fieldName, final Object val) {
         final String opString = op.val();
 
         if (!ops.containsKey(opString)) {
             ops.put(opString, new LinkedHashMap<String, Object>());
         }
-        ops.get(opString).put(fieldName.toString(), val);
+        ops.get(opString).put(fieldName, val);
     }
 
     private MappedField validate(final Object val, final StringBuilder fieldName) {
         return validateNames || validateTypes
                ? validateQuery(clazz, mapper, fieldName, FilterOperator.EQUAL, val, validateNames, validateTypes)
                : null;
+    }
+
+    MappedField findField(final MappedClass mc, final List<String> path) {
+        String segment = path.get(0);
+
+        MappedField mf = mc.getMappedField(segment);
+        if (mf == null) {
+            mf = mc.getMappedFieldByJavaField(segment);
+        }
+        if (mf == null && mc.isInterface()) {
+            for (final MappedClass mappedClass : mapper.getSubTypes(mc)) {
+                try {
+                    return findField(mappedClass, new ArrayList<String>(path));
+                } catch (MappingException e) {
+                    // try the next one
+                }
+            }
+        }
+        String namePath;
+        if (mf != null) {
+            namePath = mf.getNameToStore();
+        } else {
+            if (!validateNames) {
+                throw new MappingException(format("Could not resolve path '%s' against '%s'.", join(path, '.'), mc.getClazz().getName()));
+            } else {
+                return null;
+            }
+        }
+        if (path.size() > 1) {
+            try {
+                Class concreteType = !mf.isSingleValue() ? mf.getSubClass() : mf.getConcreteType();
+                namePath += "." + findField(mapper.getMappedClass(concreteType), path.subList(1, path.size()));
+            } catch (MappingException e) {
+                if (!validateNames) {
+                    throw new MappingException(format("Could not resolve path '%s' against '%s'.", join(path, '.'), mc.getClazz().getName()));
+                } else {
+                    return null;
+                }
+            }
+        }
+        return mf;
     }
 
     protected UpdateOperations<T> remove(final String fieldExpr, final boolean firstNotLast) {
@@ -307,4 +361,5 @@ public class UpdateOpsImpl<T> implements UpdateOperations<T> {
 
         return list;
     }
+
 }
