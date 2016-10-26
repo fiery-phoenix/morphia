@@ -39,6 +39,7 @@ import org.mongodb.morphia.annotations.Property;
 import org.mongodb.morphia.annotations.Text;
 import org.mongodb.morphia.mapping.MappedClass;
 import org.mongodb.morphia.mapping.MappingException;
+import org.mongodb.morphia.query.ValidationException;
 import org.mongodb.morphia.utils.IndexDirection;
 import org.mongodb.morphia.utils.IndexType;
 
@@ -79,7 +80,7 @@ public class IndexHelperTest extends TestBase {
                         .type(IndexType.DESC));
         try {
             indexHelper.calculateKeys(mappedClass, index);
-            fail("Validation should have errored on the bad key");
+            fail("Validation should have failed on the bad key");
         } catch (MappingException e) {
             // all good
         }
@@ -150,7 +151,7 @@ public class IndexHelperTest extends TestBase {
         try {
             assertEquals("nest.whatsit", indexHelper.findField(mappedClass, new IndexOptionsBuilder(), asList("nest", "whatsit")));
             fail("Should have failed on the bad index path");
-        } catch (MappingException e) {
+        } catch (ValidationException e) {
             // alles ist gut
         }
         assertEquals("nest.whatsit.nested.more.deeply.than.the.object.model",
@@ -274,7 +275,7 @@ public class IndexHelperTest extends TestBase {
         Index converted = indexHelper.convert(indexed, "oldstyle");
         assertEquals(converted.options().name(), "index_name");
         assertTrue(converted.options().background());
-        assertTrue(converted.options().dropDups());
+        assertTrue(converted.options(). dropDups());
         assertTrue(converted.options().sparse());
         assertTrue(converted.options().unique());
         assertEquals(new FieldBuilder().value("oldstyle").type(IndexType.DESC), converted.fields()[0]);

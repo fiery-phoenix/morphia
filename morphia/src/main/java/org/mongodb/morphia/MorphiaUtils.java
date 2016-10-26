@@ -24,10 +24,20 @@ import java.util.List;
  *
  * @since 1.3
  */
-public class MorphiaUtils {
-    public static String join(final List<String> path, final char delimiter) {
+public final class MorphiaUtils {
+    private MorphiaUtils() {
+    }
+
+    /**
+     * Joins strings with the given delimiter
+     *
+     * @param strings   the strings to join
+     * @param delimiter the delimiter
+     * @return the joined string
+     */
+    public static String join(final List<String> strings, final char delimiter) {
         StringBuilder builder = new StringBuilder();
-        for (String element : path) {
+        for (String element : strings) {
             if (builder.length() != 0) {
                 builder.append(delimiter);
             }

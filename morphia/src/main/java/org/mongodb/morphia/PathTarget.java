@@ -32,7 +32,6 @@ import static org.mongodb.morphia.MorphiaUtils.join;
  * This is an internal class and is subject to change or removal.
  */
 public class PathTarget {
-    private final String path;
     private final List<String> segments;
     private boolean validateNames = true;
     private int position;
@@ -42,17 +41,21 @@ public class PathTarget {
     private MappedField target;
 
     /**
+     * Creates a resolution context for the given root and path.
+     *
      * @param mapper mapper
      * @param root root
      * @param path path
      */
     public PathTarget(final Mapper mapper, final MappedClass root, final String path) {
         this.root = root;
-        this.path = path;
         segments = asList(path.split("\\."));
         this.mapper = mapper;
     }
 
+    /**
+     * Disables validation of path segments.
+     */
     public void disableValidation() {
         validateNames = false;
     }
@@ -61,10 +64,20 @@ public class PathTarget {
         return position < segments.size();
     }
 
+    /**
+     * Returns the translated path for this context.  If validation is disabled, that path could be the same as the initial value.
+     *
+     * @return the translated path
+     */
     public String translatedPath() {
         return join(segments, '.');
     }
 
+    /**
+     * Returns the MappedField found at the end of a path.  May be null if the path is invalid and validation is disabled.
+     *
+     * @return the field
+     */
     public MappedField getTarget() {
         return target;
     }
@@ -73,6 +86,9 @@ public class PathTarget {
         return segments.get(position++);
     }
 
+    /**
+     * Resolves the path for the given root.
+     */
     public void resolve() {
         context = this.root;
         position = 0;

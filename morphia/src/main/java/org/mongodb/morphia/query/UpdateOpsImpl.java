@@ -4,10 +4,8 @@ package org.mongodb.morphia.query;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.mongodb.morphia.PathTarget;
-import org.mongodb.morphia.mapping.MappedClass;
 import org.mongodb.morphia.mapping.MappedField;
 import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.mapping.MappingException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,11 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.mongodb.morphia.MorphiaUtils.join;
-import static org.mongodb.morphia.query.QueryValidator.validateQuery;
 
 
 /**
@@ -258,6 +252,7 @@ public class UpdateOpsImpl<T> implements UpdateOperations<T> {
     /**
      * @return true if isolated
      */
+    @Override
     public boolean isIsolated() {
         return isolated;
     }
@@ -299,53 +294,6 @@ public class UpdateOpsImpl<T> implements UpdateOperations<T> {
             ops.put(opString, new LinkedHashMap<String, Object>());
         }
         ops.get(opString).put(fieldName, val);
-    }
-
-    private MappedField validate(final Object val, final StringBuilder fieldName) {
-        return validateNames || validateTypes
-               ? validateQuery(clazz, mapper, fieldName, FilterOperator.EQUAL, val, validateNames, validateTypes)
-               : null;
-    }
-
-    MappedField findField(final MappedClass mc, final List<String> path) {
-        String segment = path.get(0);
-
-        MappedField mf = mc.getMappedField(segment);
-        if (mf == null) {
-            mf = mc.getMappedFieldByJavaField(segment);
-        }
-        if (mf == null && mc.isInterface()) {
-            for (final MappedClass mappedClass : mapper.getSubTypes(mc)) {
-                try {
-                    return findField(mappedClass, new ArrayList<String>(path));
-                } catch (MappingException e) {
-                    // try the next one
-                }
-            }
-        }
-        String namePath;
-        if (mf != null) {
-            namePath = mf.getNameToStore();
-        } else {
-            if (!validateNames) {
-                throw new MappingException(format("Could not resolve path '%s' against '%s'.", join(path, '.'), mc.getClazz().getName()));
-            } else {
-                return null;
-            }
-        }
-        if (path.size() > 1) {
-            try {
-                Class concreteType = !mf.isSingleValue() ? mf.getSubClass() : mf.getConcreteType();
-                namePath += "." + findField(mapper.getMappedClass(concreteType), path.subList(1, path.size()));
-            } catch (MappingException e) {
-                if (!validateNames) {
-                    throw new MappingException(format("Could not resolve path '%s' against '%s'.", join(path, '.'), mc.getClazz().getName()));
-                } else {
-                    return null;
-                }
-            }
-        }
-        return mf;
     }
 
     protected UpdateOperations<T> remove(final String fieldExpr, final boolean firstNotLast) {

@@ -218,7 +218,8 @@ final class IndexHelper {
     }
 
     private MappingException pathFail(final MappedClass mc, final List<String> path) {
-        return new MappingException(format("Could not resolve path '%s' against '%s'.", MorphiaUtils.join(path, '.'), mc.getClazz().getName()));
+        return new MappingException(format("Could not resolve path '%s' against '%s'.", MorphiaUtils.join(path, '.'),
+                                           mc.getClazz().getName()));
     }
 
     private Index replaceFields(final Index original, final List<Field> list) {
